@@ -1,26 +1,27 @@
 {
-  description = "A Python Development Enviroment";
+  description = "A ROS Development Enviroment";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/master";
+    nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, nix-ros-overlay }:
   flake-utils.lib.eachDefaultSystem (system:
     let
-      # Unnecesary for the moment:
-      # overlays = [ ];
       pkgs = import nixpkgs {
         inherit system;
+        overlays = [ nix-ros-overlay.overlays.default ];
       };
     in {
       devShells.default = with pkgs; mkShell {
         buildInputs = [
-	  (pkgs.python3.withPackages (py-pkgs: with py-pkgs; [
-              # Additional python packages go here
-	      python-lsp-server
-	  ]))
+	    (with pkgs.rosPackages.kilted; buildEnv {
+	      paths = [
+		ros-core
+	      ];
+	    })
 	];
 
         # For convinience
